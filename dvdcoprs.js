@@ -14,9 +14,10 @@
 // 6) On récupère le film liké pour l'ajouter à un tableau de favoris (par exemple)
 
 // On veut pouvoir préserver les favoris meme après fermeture du navigateur 
-// 
 
-// Pusher sur guthub une fois fini !! 
+// bonus perso : afficher toute la liste des films avec possibilité de chercher par lettre 
+
+// Pusher sur github une fois fini !! 
 
 const input = document.querySelector('input')
 const submit = document.querySelector('.submit')
@@ -26,11 +27,9 @@ const favList = document.querySelector('.fav-list')
 
 const key = 'f1cd3768'
 
-const favs = []
-
 // On écoute le bouton de soumission 
 submit.addEventListener('click', () => {
-    list.innerHTML = ""
+    // list.innerHTML = ""
 
     const search = input.value
     const url = `http://www.omdbapi.com/?apikey=${key}&s=${search}&page=1`
@@ -41,46 +40,19 @@ submit.addEventListener('click', () => {
     .catch(err => console.log(err))
 })
 
-
+// On écoute le bouton de fav 
 favBtn.addEventListener('click', () => {
-    list.innerHTML = ""
-
-    // Recupérer mes favoris depuis le local storage
+    // On recup les films depuis le local storage
     const favsArray = JSON.parse(localStorage.getItem('favs'))
 
-    favsArray.forEach(movie => {
-        // console.log(movie)
-        const li = document.createElement('li')
-        li.setAttribute('id', movie.imdbId)
-
-        li.innerHTML = `
-                <h2>${movie.title}</h2>
-                <img src=${movie.poster}>
-                <h3>${movie.year}</h3>
-                <button style="color:red" class="delFavBtn">Supprimer des favoris</button>`
-        
-        // On écoute le bouton de suppression
-        li.addEventListener('click', (e) => {
-            if (e.target.getAttribute('class') === 'delFavBtn') {
-                const id = e.target.parentElement.getAttribute('id')
-
-                // Je filtre de mon tableau de favoris le film choisi via son imdbId 
-                const newArray = favsArray.filter((movie) => movie.imdbId != id)
-
-                // On sauvegarde le tableau des favoris dans le local storage
-                localStorage.setItem('favs', JSON.stringify(newArray))
-
-                // On affiche le contenu de list dans la console 
-                console.log(list)
-
-            
-            }
-        })
-        list.appendChild(li)
-    })
+    // On les affiche avec notre fonction displayMovies
+    displayMovies(favsArray)
 })
 
+// Notre fonction d'affichage 
 function displayMovies(movies) {
+    list.innerHTML = ""
+
     if (movies) {
         movies.forEach(movie => {
             const title = movie.Title
@@ -90,35 +62,63 @@ function displayMovies(movies) {
 
             const li = document.createElement('li')
 
-            li.innerHTML = `
+            // Selon si le film est un favoris ou non on affiche le bouton adéquat
+            if (movie.fav === true) {
+                li.innerHTML = `
+                <li id=${imdbId}>
+                    <h2>${title}</h2>
+                    <img src=${poster}>
+                    <h3>${year}</h3>
+                    <button class="delFavBtn">Supprimer des favoris</button>
+                </li>`
+            } else {
+                li.innerHTML = `
                 <li id=${imdbId}>
                     <h2>${title}</h2>
                     <img src=${poster}>
                     <h3>${year}</h3>
                     <button class="addFavBtn">Ajouter aux favoris</button>
                 </li>`
+            }
 
-            // On écoute le bouton des favoris 
+            // On écoute le bouton des favoris (soit ajout, soit suppression)
             li.addEventListener('click', (e) => {
                 if (e.target.getAttribute('class') === 'addFavBtn') {
+
                     const id = e.target.parentElement.getAttribute('id')
 
                     // On crée un objet avec les infos nécessaires pour notre film
                     const item = {
-                        title: title,
-                        poster: poster,
-                        year: year,
-                        imdbId: imdbId
+                        Title: title,
+                        Poster: poster,
+                        Year: year,
+                        imdbID: imdbId,
+                        fav: true
                     }
 
-                    // On push l'objet à la fin du tableaud es favs
-                    favs.push(item)
+                    // On push l'objet à la fin du tableau des favs
+                    // favs.push(item)
+
+                    const favsArray = JSON.parse(localStorage.getItem('favs'))
+                    favsArray.push(item)
 
                     // On sauvegarde le tableau des favoris dans le local storage
-                    localStorage.setItem('favs', JSON.stringify(favs))
+                    localStorage.setItem('favs', JSON.stringify(favsArray))
+
+                } else if (e.target.getAttribute('class') === 'delFavBtn') {
+                    
+                    const favsArray = JSON.parse(localStorage.getItem('favs'))
+                    const id = e.target.parentElement.getAttribute('id')
+
+                    // Je filtre de mon tableau de favoris le film choisi via son imdbId 
+                    const newArray = favsArray.filter((movie) => movie.imdbID != id)
+    
+                    // On sauvegarde le tableau des favoris dans le local storage
+                    localStorage.setItem('favs', JSON.stringify(newArray))
+
+                    displayMovies(newArray)
                 }
             })
-
             list.appendChild(li)
         })
     } else {
